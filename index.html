@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Desktop OS</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+      font-family: "Inter", "Segoe UI", sans-serif;
+    }
+
+    :root {
+      --bg: #050505;
+      --panel: rgba(15,15,15,0.72);
+      --panel-2: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --text: #f3f3f3;
+      --muted: #b6b6b6;
+      --accent: #00ffb3;
+      --accent2: #00aaff;
+      --danger: #ff5f57;
+      --warn: #ffbd2e;
+      --ok: #28c840;
+      --shadow: 0 20px 60px rgba(0,0,0,0.55);
+    }
+
+    body {
+      overflow: hidden;
+      background: #000;
+      color: var(--text);
+    }
+
+    /* ================= BOOT ================= */
+    #bootScreen, #loginScreen {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      background:
+        radial-gradient(circle at center, rgba(0,255,179,0.08), transparent 30%),
+        radial-gradient(circle at top left, rgba(0,170,255,0.08), transparent 25%),
+        linear-gradient(135deg, #030303, #080808 40%, #020202 100%);
+      transition: opacity 0.8s ease, visibility 0.8s ease;
+    }
+
+    .hidden-screen {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .boot-logo {
+      font-size: 4rem;
+      letter-spacing: 8px;
+      color: var(--accent);
+      text-shadow: 0 0 30px rgba(0,255,179,0.55);
+      margin-bottom: 18px;
+      animation: flicker 2s infinite;
+    }
+
+    .boot-sub {
+      color: #9df8da;
+      margin-bottom: 26px;
+      letter-spacing: 2px;
+      font-size: 0.95rem;
+    }
+
+    .boot-bar {
+      width: 320px;
+      height: 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.15);
+      overflow: hidden;
+      background: rgba(255,255,255,0.04);
+      margin-bottom: 14px;
+    }
+
+    .boot-progress {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 25px rgba(0,255,179,0.45);
+      animation: bootLoad 3.5s ease forwards;
+    }
+
+    .boot-status {
+      color: var(--muted);
+      font-size: 0.9rem;
+      min-height: 24px;
+      text-align: center;
+    }
+
+    @keyframes bootLoad {
+      to { width: 100%; }
+    }
+
+    @keyframes flicker {
+      0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
+      20%, 24%, 55% { opacity: 0.85; }
+    }
+
+    /* ================= LOGIN ================= */
+    .login-card {
+      width: 360px;
+      background: rgba(12,12,12,0.76);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(18px);
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      text-align: center;
+      animation: riseIn 0.6s ease;
+    }
+
+    .avatar {
+      width: 86px;
+      height: 86px;
+      border-radius: 50%;
+      margin: 0 auto 18px;
+      display: grid;
+      place-items: center;
+      font-size: 2rem;
+      background: linear-gradient(135deg, rgba(0,255,179,0.18), rgba(0,170,255,0.18));
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 0 30px rgba(0,255,179,0.12);
+    }
+
+    .login-card h2 {
+      margin-bottom: 6px;
+      font-size: 1.5rem;
+    }
+
+    .login-card p {
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(0,255,179,0.18), rgba(0,170,255,0.18));
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: 0.22s;
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(0,255,179,0.15);
+    }
+
+    @keyframes riseIn {
+      from { opacity: 0; transform: translateY(20px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* ================= DESKTOP ================= */
+    .desktop {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top left, rgba(0,255,179,0.14), transparent 22%),
+        radial-gradient(circle at bottom right, rgba(0,170,255,0.14), transparent 28%),
+        linear-gradient(135deg, #030303, #0b0b0b 45%, #050505 100%);
+    }
+
+    .grid-overlay, .scanlines, .noise {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .grid-overlay {
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: radial-gradient(circle at center, black 30%, transparent 100%);
+      opacity: 0.08;
+    }
+
+    .scanlines {
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.025) 0px,
+        rgba(255,255,255,0.025) 1px,
+        transparent 2px,
+        transparent 4px
+      );
+      opacity: 0.05;
+    }
+
+    .noise {
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    }
+
+    .orb {
+      position: absolute;
+      width: 420px;
+      height: 420px;
+      border-radius: 50%;
+      filter: blur(110px);
+      opacity: 0.12;
+      animation: floatOrb 12s ease-in-out infinite alternate;
+    }
+
+    .orb1 { top: -120px; left: -80px; background: var(--accent); }
+    .orb2 { bottom: -120px; right: -100px; background: var(--accent2); animation-delay: 2s; }
+    .orb3 { top: 35%; left: 45%; background: #7c4dff; width: 280px; height: 280px; opacity: 0.08; animation-delay: 5s; }
+
+    @keyframes floatOrb {
+      from { transform: translate(0,0) scale(1); }
+      to { transform: translate(40px, 30px) scale(1.08); }
+    }
+
+    /* ================= ICONS ================= */
+    .desktop-icons {
+      position: absolute;
+      top: 26px;
+      left: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      z-index: 3;
+    }
+
+    .icon {
+      width: 92px;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.2s;
+      padding: 10px 8px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+    }
+
+    .icon:hover {
+      background: rgba(255,255,255,0.05);
+      transform: scale(1.05);
+      border-color: rgba(255,255,255,0.08);
+    }
+
+    .icon.selected {
+      background: rgba(0,170,255,0.14);
+      border-color: rgba(0,170,255,0.24);
+    }
+
+    .icon .emoji {
+      font-size: 2rem;
+      display: block;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 0 10px rgba(255,255,255,0.08));
+    }
+
+    .icon .label {
+      font-size: 0.84rem;
+      color: #e8e8e8;
+      text-shadow: 0 0 10px rgba(255,255,255,0.18);
+    }
+
+    /* ================= WINDOWS ================= */
+    .window {
+      position: absolute;
+      width: 640px;
+      height: 420px;
+      background: rgba(13,13,13,0.78);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 22px;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 24px 70px rgba(0,0,0,0.6), 0 0 30px rgba(0,255,179,0.05);
+      overflow: hidden;
+      display: none;
+      animation: windowIn 0.22s ease;
+      z-index: 10;
+    }
+
+    @keyframes windowIn {
+      from { opacity: 0; transform: scale(0.96) translateY(18px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .window.minimized {
+      display: none !important;
+    }
+
+    .window.maximized {
+      top: 14px !important;
+      left: 14px !important;
+      width: calc(100vw - 28px) !important;
+      height: calc(100vh - 108px) !important;
+      border-radius: 24px;
+    }
+
+    .window-header {
+      height: 52px;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px 0 16px;
+      cursor: move;
+    }
+
+    .window-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #f5f5f5;
+      letter-spacing: 0.3px;
+    }
+
+    .window-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .window-btn {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .window-btn:hover { transform: scale(1.12); }
+    .close { background: var(--danger); }
+    .min { background: var(--warn); }
+    .max { background: var(--ok); }
+
+    .window-content {
+      padding: 18px;
+      height: calc(100% - 52px);
+      overflow: auto;
+    }
+
+    .window-content::-webkit-scrollbar { width: 8px; }
+    .window-content::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.12);
+      border-radius: 999px;
+    }
+
+    /* ================= CARDS ================= */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      padding: 18px;
+      transition: 0.18s;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(0,255,179,0.24);
+      box-shadow: 0 12px 26px rgba(0,0,0,0.22);
+    }
+
+    .card h3 {
+      color: var(--accent);
+      margin-bottom: 8px;
+      font-size: 1rem;
+    }
+
+    .card p {
+      color: #d5d5d5;
+      line-height: 1.6;
+      font-size: 0.94rem;
+    }
+
+    /* ================= TERMINAL ================= */
+    .terminal {
+      background: #040404;
+      color: var(--accent);
+      font-family: "Courier New", monospace;
+      border-radius: 16px;
+      padding: 16px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      box-shadow: inset 0 0 24px rgba(0,255,179,0.04);
+    }
+
+    .terminal-output {
+      flex: 1;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .terminal-input-line {
+      display: flex;
+      align-items: center;
+      margin-top: 12px;
+      border-top: 1px solid rgba(0,255,179,0.14);
+      padding-top: 10px;
+    }
+
+    .terminal-input-line span {
+      margin-right: 10px;
+      color: var(--accent2);
+    }
+
+    .terminal-input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--accent);
+      width: 100%;
+      font-family: "Courier New", monospace;
+      font-size: 1rem;
+    }
+
+    /* ================= NOTES ================= */
+    .notes-area {
+      width: 100%;
+      height: 100%;
+      resize: none;
+      background: rgba(255,255,255,0.03);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 16px;
+      outline: none;
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+
+    /* ================= CALC ================= */
+    .calc {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .calc-display {
+      grid-column: span 4;
+      height: 76px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: white;
+      font-size: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 18px;
+      overflow: hidden;
+    }
+
+    .calc button {
+      height: 62px;
+      border: none;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.05);
+      color: white;
+      font-size: 1.15rem;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .calc button:hover {
+      background: rgba(0,255,179,0.14);
+      transform: translateY(-2px);
+    }
+
+    /* ================= BROWSER ================= */
+    .browser-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .browser-input {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: white;
+      padding: 12px 14px;
+      border-radius: 14px;
+      outline: none;
+    }
+
+    .browser-page {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 18px;
+      padding: 24px;
+      min-height: 250px;
+      line-height: 1.8;
+      color: #ddd;
+    }
+
+    /* ================= MUSIC ================= */
+    .music-wrap {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 20px;
+      align-items: center;
+      height: 100%;
+    }
+
+    .album {
+      aspect-ratio: 1/1;
+      width: 100%;
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,0.12), transparent 25%),
+        linear-gradient(135deg, rgba(0,255,179,0.24), rgba(0,170,255,0.24), rgba(124,77,255,0.24));
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      animation: spinAlbum 10s linear infinite;
+      animation-play-state: paused;
+    }
+
+    .album.playing {
+      animation-play-state: running;
+    }
+
+    .album::after {
+      content: "";
+      position: absolute;
+      inset: 50%;
+      width: 26px;
+      height: 26px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: rgba(0,0,0,0.55);
+      border: 2px solid rgba(255,255,255,0.1);
+    }
+
+    @keyframes spinAlbum {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .music-title {
+      font-size: 2rem;
+      margin-bottom: 8px;
+      color: var(--accent);
+    }
+
+    .music-sub {
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    .progress-wrap {
+      margin-bottom: 16px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 20px rgba(0,255,179,0.35);
+    }
+
+    .music-controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .music-btn {
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      color: white;
+      cursor: pointer;
+      transition: 0.18s;
+    }
+
+    .music-btn:hover {
+      transform: translateY(-2px);
+      background: rgba(0,255,179,0.12);
+    }
+
+    /* ================= SYSTEM ================= */
+    .stat-row {
+      margin-bottom: 16px;
+    }
+
+    .stat-head {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      color: #ddd;
+      font-size: 0.95rem;
+    }
+
+    .stat-bar {
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .stat-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 18px rgba(0,255,179,0.25);
+      transition: width 0.6s ease;
+    }
+
+    /* ================= START / TASKBAR ================= */
+    .taskbar {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      height: 70px;
+      padding: 10px 16px;
+      border-radius: 24px;
+      background: rgba(18,18,18,0.68);
+      border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 999;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+
+    .start-btn, .task-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.25rem;
+      transition: 0.18s;
+      position: relative;
+    }
+
+    .start-btn:hover, .task-icon:hover {
+      transform: translateY(-5px) scale(1.06);
+      background: rgba(0,255,179,0.12);
+    }
+
+    .task-icon.active::after {
+      content: "";
+      position: absolute;
+      bottom: 5px;
+      width: 18px;
+      height: 4px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 14px rgba(0,255,179,0.35);
+    }
+
+    .clock {
+      margin-left: 8px;
+      color: #eee;
+      min-width: 130px;
+      text-align: center;
+      font-size: 0.95rem;
+      line-height: 1.3;
+    }
+
+    .start-menu {
+      position: absolute;
+      bottom: 98px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 370px;
+      background: rgba(15,15,15,0.86);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 26px;
+      backdrop-filter: blur(20px);
+      padding: 20px;
+      display: none;
+      z-index: 1000;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+
+    .start-menu h2 {
+      margin-bottom: 16px;
+      font-size: 1.2rem;
+      color: var(--accent);
+    }
+
+    .start-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .start-app {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 18px;
+      padding: 18px;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.18s;
+    }
+
+    .start-app:hover {
+      background: rgba(0,255,179,0.10);
+      transform: translateY(-3px);
+    }
+
+    /* ================= CONTEXT MENU ================= */
+    .context-menu {
+      position: absolute;
+      width: 220px;
+      background: rgba(16,16,16,0.92);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      backdrop-filter: blur(20px);
+      box-shadow: var(--shadow);
+      padding: 8px;
+      display: none;
+      z-index: 5000;
+    }
+
+    .context-item {
+      padding: 12px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      color: #eee;
+      transition: 0.15s;
+    }
+
+    .context-item:hover {
+      background: rgba(0,255,179,0.12);
+    }
+
+    /* ================= MOBILE ================= */
+    @media (max-width: 900px) {
+      .window {
+        width: 94vw !important;
+        height: 72vh !important;
+        left: 3vw !important;
+        top: 8vh !important;
+      }
+
+      .music-wrap {
+        grid-template-columns: 1fr;
+      }
+
+      .album {
+        width: 180px;
+        margin: 0 auto;
+      }
+
+      .taskbar {
+        width: 94%;
+        justify-content: center;
+        flex-wrap: wrap;
+        height: auto;
+      }
+
+      .clock {
+        min-width: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Boot -->
+  <div id="bootScreen">
+    <div class="boot-logo">NEON OS</div>
+    <div class="boot-sub">INITIALIZING SYSTEM</div>
+    <div class="boot-bar"><div class="boot-progress"></div></div>
+    <div class="boot-status" id="bootStatus">Loading kernel modules...</div>
+  </div>
+
+  <!-- Login -->
+  <div id="loginScreen" class="hidden-screen">
+    <div class="login-card">
+      <div class="avatar">⬢</div>
+      <h2>Guest</h2>
+      <p>Tap to enter the system</p>
+      <button class="login-btn" id="enterDesktop">Enter Desktop</button>
+    </div>
+  </div>
+
+  <!-- Desktop -->
+  <div class="desktop" id="desktop">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+    <div class="grid-overlay"></div>
+    <div class="scanlines"></div>
+    <div class="noise"></div>
+
+    <!-- Desktop Icons -->
+    <div class="desktop-icons">
+      <div class="icon" data-window="terminalWindow" ondblclick="openWindow('terminalWindow')">
+        <span class="emoji">🖥️</span>
+        <span class="label">Terminal</span>
+      </div>
+      <div class="icon" data-window="notesWindow" ondblclick="openWindow('notesWindow')">
+        <span class="emoji">📝</span>
+        <span class="label">Notes</span>
+      </div>
+      <div class="icon" data-window="calcWindow" ondblclick="openWindow('calcWindow')">
+        <span class="emoji">🧮</span>
+        <span class="label">Calculator</span>
+      </div>
+      <div class="icon" data-window="browserWindow" ondblclick="openWindow('browserWindow')">
+        <span class="emoji">🌐</span>
+        <span class="label">Browser</span>
+      </div>
+      <div class="icon" data-window="musicWindow" ondblclick="openWindow('musicWindow')">
+        <span class="emoji">🎵</span>
+        <span class="label">Music</span>
+      </div>
+      <div class="icon" data-window="systemWindow" ondblclick="openWindow('systemWindow')">
+        <span class="emoji">📊</span>
+        <span class="label">System</span>
+      </div>
+    </div>
+
+    <!-- Terminal -->
+    <div class="window" id="terminalWindow" style="top: 90px; left: 170px;">
+      <div class="window-header">
+        <div class="window-title">Terminal</div>
+        <div class="window-buttons">
+          <div class="window-btn close" onclick="closeWindow('terminalWindow')"></div>
+          <div class="window-btn min" onclick="minimizeWindow('terminalWindow')"></div>
+          <div class="window-btn max" onclick="maximizeWindow('terminalWindow')"></div>
+        </div>
+      </div>
+      <div class="window-content" style="padding: 14px;">
+        <div class="terminal">
+          <div class="terminal-output" id="terminalOutput">NEON OS [Version 2.0]
+(c) Browser Systems. All rights reserved.
+
+Type "help" to begin.</div>
+          <div class="terminal-input-line">
+            <span>guest@neon:~$</span>
+            <input class="terminal-input" id="terminalInput" type="text" autocomplete="off" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="window" id="notesWindow" style="top: 130px; left: 280px; width: 560px; height: 390px;">
+      <div class="window-header">
+        <div class="window-title">Notes</div>
+        <div class="window-buttons">
+          <div class="window-btn close" onclick="closeWindow('notesWindow')"></div>
+          <div class="window-btn min" onclick="minimizeWindow('notesWindow')"></div>
+          <div class="window-btn max" onclick="maximizeWindow('notesWindow')"></div>
+        </div>
+      </div>
+      <div class="window-content">
+        <textarea class="notes-area" id="notesArea" placeholder="Write something..."></textarea>
+      </div>
+    </div>
+
+    <!-- Calculator -->
+    <div class="window" id="calcWindow" style="top: 160px; left: 420px; width: 370px; height: 520px;">
+      <div class="window-header">
+        <div class="window-title">Calculator</div>
+        <div class="window-buttons">
+          <div class="window-btn close" onclick="closeWindow('calcWindow')"></div>
+          <div class="window-btn min" onclick="minimizeWindow('calcWindow')"></div>
+          <div class="window-btn max" onclick="maximizeWindow('calcWindow')"></div>
+        </div>
+      </div>
+      <div class="window-content">
+        <div class="calc">
+          <div class="calc-display" id="calcDisplay">0</div>
+          <button onclick="calcInput('7')">7</button>
+          <button onclick="calcInput('8')">8</button>
+          <button onclick="calcInput('9')">9</button>
+          <button onclick="calcInput('/')">÷</button>
+
+          <button onclick="calcInput('4')">4</button>
+          <button onclick="calcInput('5')">5</button>
+          <button onclick="calcInput('6')">6</button>
+          <button onclick="calcInput('*')">×</button>
+
+          <button onclick="calcInput('1')">1</button>
+          <button onclick="calcInput('2')">2</button>
+          <button onclick="calcInput('3')">3</button>
+          <button onclick="calcInput('-')">−</button>
+
+          <button onclick="calcInput('0')">0</button>
+          <button onclick="calcInput('.')">.</button>
+          <button onclick="calculate()">=</button>
+          <button onclick="calcInput('+')">+</button>
+
+          <button style="grid-column: span 2;" onclick="calcBackspace()">⌫</button>
+          <button style="grid-column: span 2;" onclick="clearCalc()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Browser -->
+    <div class="window" id="browserWindow" style="top: 100px; left: 540px; width: 700px; height: 440px;">
+      <div class="window-header">
+        <div class="window-title">Browser</div>
+        <div class="window-buttons">
+          <div class="window-btn close" onclick="closeWindow('browserWindow')"></div>
+          <div class="window-btn min" onclick="minimizeWindow('browserWindow')"></div>
+          <div class="window-btn max" onclick="maximizeWindow('browserWindow')"></div>
+        </div>
+      </div>
+      <div class="window-content">
+        <div class="browser-bar">
+          <input class="browser-input" id="browserInput" value="desktop://home" />
+        </div>
+        <div class="browser-page" id="browserPage">
+          <h2 style="color:#00ffb3; margin-bottom: 12px;">Welcome</h2>
+          <p>This is the internal browser for NEON OS.</p>
+          <br>
+          <p>Try:</p>
+          <p><strong>desktop://home</strong></p>
+          <p><strong>desktop://apps</strong></p>
+          <p><strong>desktop://system</strong></p>
+          <p><strong>desktop://music</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Music -->
+    <div class="window" id="musicWindow" style="top: 120px; left: 360px; width: 760px; height: 430px;">
+      <div class="window-header">
+        <div class="window-title">Music</div>
+        <div class="window-buttons">
+          <div class="window-btn close" onclick="closeWindow('musicWindow')"></div>
+          <div class="window-btn min" onclick="minimizeWindow('musicWindow')"></div>
+          <div class="window-btn max" onclick="maximizeWindow('musicWindow')"></div>
+        </div>
+      </div>
+      <div class="window-content">
+        <div class="music-wrap">
+          <div class="album" id="albumArt"></div>
+          <div>
+            <div class="music-title">Night Drive</div>
+            <div class="music-sub">Synthetic Dreams • Visual Player</div>
+
+            <div class="progress-wrap">
+              <div class="progress-bar">
+                <div class="progress-fill" id="musicProgress"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; color:#bbb; font-size:0.9rem;">
+                <span id="musicTime">0:00</span>
+                <span>3:12</span>
+              </div>
+            </div>
+
+            <div class="music-controls">
+              <button class="music-btn" onclick="musicPrev()">⏮ Prev</button>
+              <button class="music-btn" onclick="toggleMusic()" id="musicPlayBtn">▶ Play</button>
+              <button class="music-btn" onclick="musicNext()">⏭ Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- System -->
+    <div class="window" id="systemWindow" style="top: 120px; left: 500px; width: 620px; height: 430px;">
+      <div class="window-header">
+        <div class="window-title">System Monitor</div>
+        <div class="window-buttons">
+          <div class="window-btn close" onclick="closeWindow('systemWindow')"></div>
+          <div class="window-btn min" onclick="minimizeWindow('systemWindow')"></div>
+          <div class="window-btn max" onclick="maximizeWindow('systemWindow')"></div>
+        </div>
+      </div>
+      <div class="window-content">
+        <div class="cards" style="margin-bottom:20px;">
+          <div class="card"><h3>OS</h3><p>NEON OS 2.0</p></div>
+          <div class="card"><h3>Status</h3><p>Operational</p></div>
+          <div class="card"><h3>Session</h3><p>Guest</p></div>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-head"><span>CPU</span><span id="cpuLabel">42%</span></div>
+          <div class="stat-bar"><div class="stat-fill" id="cpuBar" style="width:42%"></div></div>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-head"><span>Memory</span><span id="memLabel">58%</span></div>
+          <div class="stat-bar"><div class="stat-fill" id="memBar" style="width:58%"></div></div>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-head"><span>Network</span><span id="netLabel">17%</span></div>
+          <div class="stat-bar"><div class="stat-fill" id="netBar" style="width:17%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Start Menu -->
+    <div class="start-menu" id="startMenu">
+      <h2>Applications</h2>
+      <div class="start-grid">
+        <div class="start-app" onclick="openFromStart('terminalWindow')">🖥️<br><br>Terminal</div>
+        <div class="start-app" onclick="openFromStart('notesWindow')">📝<br><br>Notes</div>
+        <div class="start-app" onclick="openFromStart('calcWindow')">🧮<br><br>Calculator</div>
+        <div class="start-app" onclick="openFromStart('browserWindow')">🌐<br><br>Browser</div>
+        <div class="start-app" onclick="openFromStart('musicWindow')">🎵<br><br>Music</div>
+        <div class="start-app" onclick="openFromStart('systemWindow')">📊<br><br>System</div>
+      </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div class="context-menu" id="contextMenu">
+      <div class="context-item" onclick="openWindow('terminalWindow')">Open Terminal</div>
+      <div class="context-item" onclick="openWindow('browserWindow')">Open Browser</div>
+      <div class="context-item" onclick="openWindow('systemWindow')">Open System Monitor</div>
+      <div class="context-item" onclick="shuffleWallpaper()">Shuffle Glow</div>
+      <div class="context-item" onclick="shutdownSequence()">Shutdown</div>
+    </div>
+
+    <!-- Taskbar -->
+    <div class="taskbar">
+      <div class="start-btn" onclick="toggleStart()">⬢</div>
+      <div class="task-icon" id="task-terminalWindow" onclick="openWindow('terminalWindow')">🖥️</div>
+      <div class="task-icon" id="task-notesWindow" onclick="openWindow('notesWindow')">📝</div>
+      <div class="task-icon" id="task-calcWindow" onclick="openWindow('calcWindow')">🧮</div>
+      <div class="task-icon" id="task-browserWindow" onclick="openWindow('browserWindow')">🌐</div>
+      <div class="task-icon" id="task-musicWindow" onclick="openWindow('musicWindow')">🎵</div>
+      <div class="task-icon" id="task-systemWindow" onclick="openWindow('systemWindow')">📊</div>
+      <div class="clock" id="clock"></div>
+    </div>
+  </div>
+
+  <script>
+    const bootStatus = document.getElementById("bootStatus");
+    const bootScreen = document.getElementById("bootScreen");
+    const loginScreen = document.getElementById("loginScreen");
+    const enterDesktopBtn = document.getElementById("enterDesktop");
+
+    const bootMessages = [
+      "Loading kernel modules...",
+      "Mounting system partitions...",
+      "Starting desktop compositor...",
+      "Initializing visual shell...",
+      "Finalizing launch sequence..."
+    ];
+
+    let bootIndex = 0;
+    const bootInterval = setInterval(() => {
+      bootIndex++;
+      if (bootIndex < bootMessages.length) {
+        bootStatus.textContent = bootMessages[bootIndex];
+      }
+    }, 700);
+
+    setTimeout(() => {
+      clearInterval(bootInterval);
+      bootScreen.classList.add("hidden-screen");
+      loginScreen.classList.remove("hidden-screen");
+    }, 4200);
+
+    enterDesktopBtn.addEventListener("click", () => {
+      loginScreen.classList.add("hidden-screen");
+      setTimeout(() => {
+        openWindow("terminalWindow");
+        openWindow("browserWindow");
+      }, 300);
+    });
+
+    const windows = document.querySelectorAll(".window");
+    let highestZ = 20;
+
+    function setTaskActive(id, active) {
+      const task = document.getElementById("task-" + id);
+      if (task) task.classList.toggle("active", active);
+    }
+
+    function openWindow(id) {
+      const win = document.getElementById(id);
+      win.style.display = "block";
+      win.classList.remove("minimized");
+      highestZ++;
+      win.style.zIndex = highestZ;
+      setTaskActive(id, true);
+    }
+
+    function closeWindow(id) {
+      const win = document.getElementById(id);
+      win.style.display = "none";
+      setTaskActive(id, false);
+    }
+
+    function minimizeWindow(id) {
+      const win = document.getElementById(id);
+      win.classList.add("minimized");
+      setTaskActive(id, false);
+    }
+
+    function maximizeWindow(id) {
+      const win = document.getElementById(id);
+      win.classList.toggle("maximized");
+      highestZ++;
+      win.style.zIndex = highestZ;
+    }
+
+    function openFromStart(id) {
+      openWindow(id);
+      document.getElementById("startMenu").style.display = "none";
+    }
+
+    function toggleStart() {
+      const menu = document.getElementById("startMenu");
+      menu.style.display = menu.style.display === "block" ? "none" : "block";
+    }
+
+    windows.forEach(win => {
+      const header = win.querySelector(".window-header");
+      let isDragging = false;
+      let offsetX = 0;
+      let offsetY = 0;
+
+      header.addEventListener("mousedown", (e) => {
+        if (win.classList.contains("maximized")) return;
+        isDragging = true;
+        highestZ++;
+        win.style.zIndex = highestZ;
+        offsetX = e.clientX - win.offsetLeft;
+        offsetY = e.clientY - win.offsetTop;
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+        win.style.left = `${e.clientX - offsetX}px`;
+        win.style.top = `${e.clientY - offsetY}px`;
+      });
+
+      document.addEventListener("mouseup", () => {
+        isDragging = false;
+      });
+
+      win.addEventListener("mousedown", () => {
+        highestZ++;
+        win.style.zIndex = highestZ;
+      });
+    });
+
+    // Clock
+    function updateClock() {
+      const clock = document.getElementById("clock");
+      const now = new Date();
+      const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const date = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      clock.innerHTML = `${time}<br>${date}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Terminal
+    const terminalInput = document.getElementById("terminalInput");
+    const terminalOutput = document.getElementById("terminalOutput");
+
+    const commands = {
+      help: `
+Available commands:
+- help
+- clear
+- date
+- echo [text]
+- apps
+- open terminal
+- open notes
+- open calc
+- open browser
+- open music
+- open system
+- shutdown
+      `,
+      apps: `
+Installed apps:
+- Terminal
+- Notes
+- Calculator
+- Browser
+- Music
+- System Monitor
+      `
+    };
+
+    terminalInput.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        const raw = terminalInput.value.trim();
+        const input = raw.toLowerCase();
+        terminalOutput.innerHTML += `\n\nguest@neon:~$ ${raw}\n`;
+
+        if (input === "clear") {
+          terminalOutput.textContent = "";
+        } else if (input === "help") {
+          terminalOutput.innerHTML += commands.help;
+        } else if (input === "date") {
+          terminalOutput.innerHTML += new Date().toString();
+        } else if (input === "apps") {
+          terminalOutput.innerHTML += commands.apps;
+        } else if (input.startsWith("echo ")) {
+          terminalOutput.innerHTML += raw.slice(5);
+        } else if (input === "open terminal") {
+          openWindow("terminalWindow"); terminalOutput.innerHTML += "Opening Terminal...";
+        } else if (input === "open notes") {
+          openWindow("notesWindow"); terminalOutput.innerHTML += "Opening Notes...";
+        } else if (input === "open calc") {
+          openWindow("calcWindow"); terminalOutput.innerHTML += "Opening Calculator...";
+        } else if (input === "open browser") {
+          openWindow("browserWindow"); terminalOutput.innerHTML += "Opening Browser...";
+        } else if (input === "open music") {
+          openWindow("musicWindow"); terminalOutput.innerHTML += "Opening Music...";
+        } else if (input === "open system") {
+          openWindow("systemWindow"); terminalOutput.innerHTML += "Opening System Monitor...";
+        } else if (input === "shutdown") {
+          terminalOutput.innerHTML += "Shutting down...";
+          setTimeout(shutdownSequence, 700);
+        } else {
+          terminalOutput.innerHTML += `Command not found: ${raw}`;
+        }
+
+        terminalInput.value = "";
+        terminalOutput.scrollTop = terminalOutput.scrollHeight;
+      }
+    });
+
+    // Notes save
+    const notesArea = document.getElementById("notesArea");
+    notesArea.value = localStorage.getItem("desktopNotesV2") || "";
+    notesArea.addEventListener("input", () => {
+      localStorage.setItem("desktopNotesV2", notesArea.value);
+    });
+
+    // Calculator
+    let calcExpression = "";
+
+    function calcInput(val) {
+      calcExpression += val;
+      document.getElementById("calcDisplay").textContent = calcExpression || "0";
+    }
+
+    function clearCalc() {
+      calcExpression = "";
+      document.getElementById("calcDisplay").textContent = "0";
+    }
+
+    function calcBackspace() {
+      calcExpression = calcExpression.slice(0, -1);
+      document.getElementById("calcDisplay").textContent = calcExpression || "0";
+    }
+
+    function calculate() {
+      try {
+        calcExpression = Function("return " + calcExpression)().toString();
+        document.getElementById("calcDisplay").textContent = calcExpression;
+      } catch {
+        document.getElementById("calcDisplay").textContent = "Error";
+        calcExpression = "";
+      }
+    }
+
+    // Browser
+    const browserInput = document.getElementById("browserInput");
+    const browserPage = document.getElementById("browserPage");
+
+    browserInput.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        const page = browserInput.value.trim().toLowerCase();
+
+        if (page === "desktop://home") {
+          browserPage.innerHTML = `
+            <h2 style="color:#00ffb3; margin-bottom: 12px;">Home</h2>
+            <p>Welcome to NEON OS.</p>
+            <br>
+            <p>This is your browser-based desktop shell.</p>
+          `;
+        } else if (page === "desktop://apps") {
+          browserPage.innerHTML = `
+            <h2 style="color:#00ffb3; margin-bottom: 12px;">Apps</h2>
+            <p>🖥️ Terminal</p>
+            <p>📝 Notes</p>
+            <p>🧮 Calculator</p>
+            <p>🌐 Browser</p>
+            <p>🎵 Music</p>
+            <p>📊 System Monitor</p>
+          `;
+        } else if (page === "desktop://system") {
+          browserPage.innerHTML = `
+            <h2 style="color:#00ffb3; margin-bottom: 12px;">System</h2>
+            <p>OS: NEON OS 2.0</p>
+            <p>Status: Running</p>
+            <p>Visual Engine: Active</p>
+          `;
+        } else if (page === "desktop://music") {
+          browserPage.innerHTML = `
+            <h2 style="color:#00ffb3; margin-bottom: 12px;">Music Library</h2>
+            <p>Now available:</p>
+            <br>
+            <p>• Night Drive</p>
+            <p>• City Pulse</p>
+            <p>• Afterglow</p>
+          `;
+        } else {
+          browserPage.innerHTML = `
+            <h2 style="color:#ff5f57; margin-bottom: 12px;">404</h2>
+            <p>Page not found.</p>
+          `;
+        }
+      }
+    });
+
+    // Music visual fake player
+    let isPlaying = false;
+    let musicProgress = 0;
+    let musicInterval = null;
+    const musicFill = document.getElementById("musicProgress");
+    const musicTime = document.getElementById("musicTime");
+    const musicPlayBtn = document.getElementById("musicPlayBtn");
+    const albumArt = document.getElementById("albumArt");
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60);
+      return `${m}:${s.toString().padStart(2, "0")}`;
+    }
+
+    function toggleMusic() {
+      isPlaying = !isPlaying;
+      musicPlayBtn.textContent = isPlaying ? "⏸ Pause" : "▶ Play";
+      albumArt.classList.toggle("playing", isPlaying);
+
+      if (isPlaying) {
+        musicInterval = setInterval(() => {
+          musicProgress += 1;
+          if (musicProgress > 192) musicProgress = 0;
+          musicFill.style.width = `${(musicProgress / 192) * 100}%`;
+          musicTime.textContent = formatTime(musicProgress);
+        }, 1000);
+      } else {
+        clearInterval(musicInterval);
+      }
+    }
+
+    function musicPrev() {
+      musicProgress = 0;
+      musicFill.style.width = "0%";
+      musicTime.textContent = "0:00";
+    }
+
+    function musicNext() {
+      musicProgress = 0;
+      musicFill.style.width = "0%";
+      musicTime.textContent = "0:00";
+    }
+
+    // System Monitor
+    function randomStat(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function updateSystemStats() {
+      const cpu = randomStat(18, 86);
+      const mem = randomStat(30, 90);
+      const net = randomStat(5, 74);
+
+      document.getElementById("cpuBar").style.width = cpu + "%";
+      document.getElementById("memBar").style.width = mem + "%";
+      document.getElementById("netBar").style.width = net + "%";
+
+      document.getElementById("cpuLabel").textContent = cpu + "%";
+      document.getElementById("memLabel").textContent = mem + "%";
+      document.getElementById("netLabel").textContent = net + "%";
+    }
+    setInterval(updateSystemStats, 1800);
+    updateSystemStats();
+
+    // Start menu close
+    document.addEventListener("click", (e) => {
+      const startMenu = document.getElementById("startMenu");
+      const startBtn = document.querySelector(".start-btn");
+      if (!startMenu.contains(e.target) && !startBtn.contains(e.target)) {
+        startMenu.style.display = "none";
+      }
+    });
+
+    // Desktop icon selection
+    const icons = document.querySelectorAll(".icon");
+    icons.forEach(icon => {
+      icon.addEventListener("click", (e) => {
+        e.stopPropagation();
+        icons.forEach(i => i.classList.remove("selected"));
+        icon.classList.add("selected");
+      });
+    });
+
+    document.getElementById("desktop").addEventListener("click", () => {
+      icons.forEach(i => i.classList.remove("selected"));
+      hideContextMenu();
+    });
+
+    // Context Menu
+    const contextMenu = document.getElementById("contextMenu");
+    const desktop = document.getElementById("desktop");
+
+    desktop.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      contextMenu.style.display = "block";
+      contextMenu.style.left = `${e.clientX}px`;
+      contextMenu.style.top = `${e.clientY}px`;
+    });
+
+    function hideContextMenu() {
+      contextMenu.style.display = "none";
+    }
+
+    document.addEventListener("click", hideContextMenu);
+
+    // Shuffle wallpaper glow
+    function shuffleWallpaper() {
+      const colors = [
+        ["#00ffb3", "#00aaff", "#7c4dff"],
+        ["#ff3cac", "#784ba0", "#2b86c5"],
+        ["#00f5d4", "#00bbf9", "#9b5de5"],
+        ["#ff006e", "#3a86ff", "#8338ec"]
+      ];
+      const set = colors[Math.floor(Math.random() * colors.length)];
+      document.documentElement.style.setProperty("--accent", set[0]);
+      document.documentElement.style.setProperty("--accent2", set[1]);
+      document.querySelector(".orb3").style.background = set[2];
+    }
+
+    // Shutdown
+    function shutdownSequence() {
+      windows.forEach(win => win.style.display = "none");
+      document.getElementById("startMenu").style.display = "none";
+      loginScreen.classList.add("hidden-screen");
+      bootScreen.classList.remove("hidden-screen");
+      bootStatus.textContent = "Powering off visual shell...";
+      document.querySelector(".boot-progress").style.animation = "none";
+      document.querySelector(".boot-progress").style.width = "100%";
+
+      setTimeout(() => {
+        bootStatus.textContent = "System halted.";
+      }, 1200);
+
+      setTimeout(() => {
+        location.reload();
+      }, 2200);
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        windows.forEach(win => win.style.display = "none");
+        document.getElementById("startMenu").style.display = "none";
+      }
+
+      if (e.ctrlKey && e.key.toLowerCase() === "l") {
+        e.preventDefault();
+        toggleStart();
+      }
+    });
+  </script>
+</body>
+</html>
